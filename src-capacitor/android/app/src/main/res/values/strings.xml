@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Buy Buddy</string>
+    <string name="title_activity_main">Buy Buddy</string>
+    <string name="package_name">app.buybuddy.co.za</string>
+    <string name="custom_url_scheme">app.buybuddy.co.za</string>
+    <string name="default_web_client_id">120751650988-8pgsng3u428ea0ln5un3utgs4s14s2d0.apps.googleusercontent.com</string>
+</resources>
