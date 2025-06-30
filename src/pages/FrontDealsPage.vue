@@ -41,11 +41,11 @@
         color="white"
         text-color="primary"
         :options="[
-          {label: 'All', value: 'all'},
-          {label: 'Food', value: 'food', icon: 'restaurant'},
-          {label: 'Drinks', value: 'drinks', icon: 'local_bar'},
-          {label: 'Shopping', value: 'shopping', icon: 'shopping_bag'},
-          {label: 'Services', value: 'services', icon: 'miscellaneous_services'}
+          { label: 'All', value: 'all' },
+          { label: 'Home', value: 'home', icon: 'home_repair_service' },
+          { label: 'Fashion', value: 'fashion', icon: 'checkroom' },
+          { label: 'Tech', value: 'tech', icon: 'devices' },
+          { label: 'Grocery', value: 'grocery', icon: 'local_grocery_store' },
         ]"
       />
     </div>
@@ -64,7 +64,7 @@
             <q-img
               :src="deal.image_url"
               alt="Deal Image"
-              style="width: 100px; height: 100px;"
+              style="width: 100px; height: 100px"
               class="rounded-borders"
               spinner-color="grey-5"
             />
@@ -108,10 +108,10 @@ const formatCategory = (category) => {
 // Get color based on category
 const getCategoryColor = (category) => {
   const colors = {
-    food: 'orange',
-    drinks: 'blue',
-    shopping: 'purple',
-    services: 'teal'
+    home: 'orange',
+    fashion: 'blue',
+    tech: 'purple',
+    grocery: 'teal',
   }
   return colors[category] || 'grey'
 }
@@ -120,20 +120,20 @@ const getCategoryColor = (category) => {
 const filteredDeals = computed(() => {
   let deals = dealStore.deals
   if (selectedCategory.value !== 'all') {
-    deals = deals.filter(deal => deal.category === selectedCategory.value)
+    deals = deals.filter((deal) => deal.category === selectedCategory.value)
   }
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.trim().toLowerCase()
-    deals = deals.filter(deal =>
-      deal.title?.toLowerCase().includes(query) ||
-      deal.description?.toLowerCase().includes(query) ||
-      deal.store_address?.toLowerCase().includes(query) ||
-      deal.store_name?.toLowerCase().includes(query)
+    deals = deals.filter(
+      (deal) =>
+        deal.title?.toLowerCase().includes(query) ||
+        deal.description?.toLowerCase().includes(query) ||
+        deal.store_address?.toLowerCase().includes(query) ||
+        deal.store_name?.toLowerCase().includes(query),
     )
   }
   return deals
 })
-
 </script>
 
 <style scoped>
@@ -147,7 +147,9 @@ const filteredDeals = computed(() => {
   border-radius: 12px;
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 #place:focus,

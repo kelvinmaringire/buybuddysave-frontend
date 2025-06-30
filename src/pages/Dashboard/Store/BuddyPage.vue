@@ -4,9 +4,9 @@
     <q-banner dense inline-actions class="text-white bg-primary q-mb-md">
       <div class="text-h6">Buy Buddies</div>
       <template v-slot:action>
-        <q-btn dense round flat icon="people" color="white">
+        <q-btn dense round flat icon="chat" color="white">
           <q-badge color="red" floating rounded>
-            {{ sharedAcceptedDeals.length }}
+            {{ totalUnreadMessages }}
           </q-badge>
         </q-btn>
       </template>
@@ -27,13 +27,13 @@
         v-for="dealData in sharedAcceptedDeals"
         :key="dealData.deal.id"
         class="q-mb-md q-px-md q-pt-sm shadow-2"
-        style="border-radius: 12px;"
+        style="border-radius: 12px"
       >
         <!-- Deal Card -->
         <q-card-section horizontal class="items-start">
           <q-img
             :src="dealData.deal.image_url"
-            style="width: 100px; height: 100px;"
+            style="width: 100px; height: 100px"
             class="rounded-borders"
           />
 
@@ -82,9 +82,7 @@
                 >
                   {{ getUnreadCount(dealData.deal.id, user.id) }}
                 </q-badge>
-
               </q-btn>
-
             </div>
           </div>
         </q-card-section>
@@ -120,37 +118,37 @@ const sharedAcceptedDeals = computed(() => {
   const allDeals = dealStore.deals
   const shoppingList = dealStore.shopping_list
 
-  const userCart = shoppingList.find(cart => cart.user === userId)
+  const userCart = shoppingList.find((cart) => cart.user === userId)
   if (!userCart || !userCart.deals) return []
 
   const userDeals = userCart.deals
   const sharedDeals = []
 
-  userDeals.forEach(dealId => {
+  userDeals.forEach((dealId) => {
     const interestedUsers = shoppingList
-      .filter(cart => cart.deals.includes(dealId) && cart.user !== userId)
-      .map(cart => cart.user)
+      .filter((cart) => cart.deals.includes(dealId) && cart.user !== userId)
+      .map((cart) => cart.user)
 
     if (interestedUsers.length > 0) {
       sharedDeals.push({
         deal: dealId,
-        users: interestedUsers
+        users: interestedUsers,
       })
     }
   })
 
   return sharedDeals
-    .map(sharedDeal => {
-      const deal = allDeals.find(d => d.id === sharedDeal.deal)
+    .map((sharedDeal) => {
+      const deal = allDeals.find((d) => d.id === sharedDeal.deal)
       const users = sharedDeal.users
-        .map(userId => authStore.users.find(u => u.id === userId))
-        .filter(user => {
+        .map((userId) => authStore.users.find((u) => u.id === userId))
+        .filter((user) => {
           const request = currentRequest(sharedDeal.deal, user.id)
           return request && request.status === 'Accepted'
         })
       return { deal, users }
     })
-    .filter(dealData => dealData.users.length > 0)
+    .filter((dealData) => dealData.users.length > 0)
 })
 
 const buttonState = computed(() => (dealId, userId) => {
@@ -159,17 +157,35 @@ const buttonState = computed(() => (dealId, userId) => {
   return request.status === 'Accepted' ? 'accepted' : 'declined'
 })
 
-function currentRequest (dealId, recipientId) {
+const totalUnreadMessages = computed(() => {
+  const userId = authStore.userId
+  if (!userId) return 0
+
+  let total = 0
+
+  sharedAcceptedDeals.value.forEach((dealData) => {
+    dealData.users.forEach((user) => {
+      const buddyId = getBuddyId(dealData.deal.id, user.id)
+      if (buddyId) {
+        total += buddyStore.unreadMessagesCount(buddyId, userId)
+      }
+    })
+  })
+
+  return total
+})
+
+function currentRequest(dealId, recipientId) {
   const requesterId = authStore.userId
   return buddyStore.buddy_requests.find(
-    request =>
+    (request) =>
       request.deal === dealId &&
       ((request.requester === requesterId && request.recipient === recipientId) ||
-        (request.requester === recipientId && request.recipient === requesterId))
+        (request.requester === recipientId && request.recipient === requesterId)),
   )
 }
 
-function getBuddyId (dealId, userId) {
+function getBuddyId(dealId, userId) {
   const buddies = buddyStore.buddies
   const request = currentRequest(dealId, userId)
 
@@ -178,21 +194,20 @@ function getBuddyId (dealId, userId) {
   }
 
   const buddy = buddies.find(
-    b =>
+    (b) =>
       b.deal === dealId &&
       ((b.requester === request.requester && b.recipient === request.recipient) ||
-        (b.requester === request.recipient && b.recipient === request.requester))
+        (b.requester === request.recipient && b.recipient === request.requester)),
   )
 
   return buddy ? buddy.id : null
 }
 
-function getUnreadCount (dealId, userId) {
+function getUnreadCount(dealId, userId) {
   const buddyId = getBuddyId(dealId, userId)
   if (!buddyId || !authStore.userId) return 0
   return buddyStore.unreadMessagesCount(buddyId, authStore.userId)
 }
-
 </script>
 
 <style scoped>

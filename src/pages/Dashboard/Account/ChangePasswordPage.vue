@@ -1,7 +1,14 @@
 <template>
   <q-page class="q-pa-md">
     <q-banner dense inline-actions class="text-white bg-primary q-mb-md">
-      <q-btn size="lg" flat dense color="white" icon="keyboard_backspace" :to="{ name: 'account'}" />
+      <q-btn
+        size="lg"
+        flat
+        dense
+        color="white"
+        icon="keyboard_backspace"
+        :to="{ name: 'account' }"
+      />
       <template v-slot:action>
         <div class="text-h6">Change Password</div>
       </template>
@@ -19,7 +26,7 @@
                 ref="currentPasswordRef"
                 label="Current Password *"
                 :type="showCurrentPassword ? 'text' : 'password'"
-                :rules="[val => !!val || 'Current password is required']"
+                :rules="[(val) => !!val || 'Current password is required']"
               >
                 <template v-slot:append>
                   <q-icon
@@ -38,11 +45,12 @@
                 label="New Password *"
                 :type="showNewPassword ? 'text' : 'password'"
                 :rules="[
-                  val => !!val || 'New password is required',
-                  val => val.length >= 8 || 'Minimum 8 characters',
-                  val => /[A-Z]/.test(val) || 'At least one uppercase letter',
-                  val => /[a-z]/.test(val) || 'At least one lowercase letter',
-                  val => /[0-9]/.test(val) || 'At least one number'
+                  (val) => !!val || 'New password is required',
+                  (val) => val.length >= 8 || 'Minimum 8 characters',
+                  (val) => /[A-Z]/.test(val) || 'At least one uppercase letter',
+                  (val) => /[a-z]/.test(val) || 'At least one lowercase letter',
+                  (val) => /[0-9]/.test(val) || 'At least one number',
+                  (val) => /[^A-Za-z0-9]/.test(val) || 'At least one special character',
                 ]"
               >
                 <template v-slot:append>
@@ -62,8 +70,8 @@
                 label="Confirm New Password *"
                 :type="showConfirmPassword ? 'text' : 'password'"
                 :rules="[
-                  val => !!val || 'Please confirm your password',
-                  val => val === formData.newPassword || 'Passwords do not match'
+                  (val) => !!val || 'Please confirm your password',
+                  (val) => val === formData.newPassword || 'Passwords do not match',
                 ]"
               >
                 <template v-slot:append>
@@ -83,13 +91,14 @@
                   <li>At least one uppercase letter</li>
                   <li>At least one lowercase letter</li>
                   <li>At least one number</li>
+                  <li>At least one special character</li>
                 </ul>
               </div>
 
               <!-- Action Buttons -->
               <div class="row justify-between q-mt-lg">
                 <q-btn
-                  :to="{ name: 'account'}"
+                  :to="{ name: 'account' }"
                   label="Cancel"
                   type="reset"
                   color="negative"
@@ -100,7 +109,11 @@
                   type="submit"
                   color="primary"
                   :loading="loading"
-                  :disable="!formData.currentPassword || !formData.newPassword || !formData.confirmNewPassword"
+                  :disable="
+                    !formData.currentPassword ||
+                    !formData.newPassword ||
+                    !formData.confirmNewPassword
+                  "
                 />
               </div>
             </q-form>
@@ -114,10 +127,12 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth-store'
 
 const authStore = useAuthStore()
 const $q = useQuasar()
+const router = useRouter()
 const loading = ref(false)
 
 const showCurrentPassword = ref(false)
@@ -131,7 +146,7 @@ const confirmNewPasswordRef = ref(null)
 const formData = ref({
   currentPassword: '',
   newPassword: '',
-  confirmNewPassword: ''
+  confirmNewPassword: '',
 })
 
 const onSubmit = async () => {
@@ -146,14 +161,14 @@ const onSubmit = async () => {
     await authStore.changePassword({
       current_password: formData.value.currentPassword,
       new_password: formData.value.newPassword,
-      user_id: authStore.userId
+      user_id: authStore.userId,
     })
 
     // Reset form on success
     formData.value = {
       currentPassword: '',
       newPassword: '',
-      confirmNewPassword: ''
+      confirmNewPassword: '',
     }
 
     // Wait for DOM updates
@@ -172,14 +187,17 @@ const onSubmit = async () => {
     $q.notify({
       type: 'positive',
       message: 'Password changed successfully',
-      position: 'top'
+      position: 'top',
     })
+
+    authStore.logout()
+    router.push({ name: 'deals' })
   } catch (error) {
     console.error('Error changing password:', error)
     $q.notify({
       type: 'negative',
       message: error.response?.data?.detail || error.message || 'Failed to change password',
-      position: 'top'
+      position: 'top',
     })
   } finally {
     loading.value = false
@@ -199,7 +217,7 @@ ul {
 }
 
 ul li::before {
-  content: "•";
+  content: '•';
   color: var(--q-primary);
   display: inline-block;
   width: 1em;

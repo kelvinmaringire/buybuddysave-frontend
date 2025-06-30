@@ -1,13 +1,12 @@
 <template>
   <q-page class="q-pa-md bg-grey-2">
-
     <!-- Banner -->
     <q-banner dense inline-actions class="text-white bg-primary q-mb-md">
       <div class="text-h6">Buddy Requests</div>
       <template v-slot:action>
-        <q-btn dense round flat icon="swap_horiz" color="white">
+        <q-btn dense round flat icon="favorite" color="white">
           <q-badge color="red" floating rounded>
-            {{ sharedInterestDeals.length }}
+            {{ noRequestDealCount }}
           </q-badge>
         </q-btn>
       </template>
@@ -28,13 +27,13 @@
         v-for="dealData in sharedInterestDeals"
         :key="dealData.deal.id"
         class="q-mb-md q-px-md q-pt-sm shadow-2"
-        style="border-radius: 12px;"
+        style="border-radius: 12px"
       >
         <!-- Deal Card -->
         <q-card-section horizontal class="items-start">
           <q-img
             :src="dealData.deal.image_url"
-            style="width: 100px; height: 100px;"
+            style="width: 100px; height: 100px"
             class="rounded-borders"
           />
 
@@ -43,9 +42,9 @@
             <div class="text-caption text-grey-7 text-ellipsis-2-lines">
               {{ dealData.deal.description }}
             </div>
-              <div class="text-caption text-blue-grey-6 q-mt-xs">
-                {{ dealData.deal.store_address }} | {{ dealData.deal.distanceKm }} km
-              </div>
+            <div class="text-caption text-blue-grey-6 q-mt-xs">
+              {{ dealData.deal.store_address }} | {{ dealData.deal.distanceKm }} km
+            </div>
           </q-card-section>
         </q-card-section>
 
@@ -74,7 +73,6 @@
                 dense
                 @click="request(dealData.deal.id, user.id)"
               />
-
             </div>
           </div>
         </q-card-section>
@@ -119,30 +117,30 @@ const sharedInterestDeals = computed(() => {
   const sharedDeals = [] // Will store shared interest deals
 
   // Loop through user's deals
-  userDeals.forEach(dealId => {
+  userDeals.forEach((dealId) => {
     // Find other users who are also interested in the same deal
     const interestedUsers = shoppingList
-      .filter(cart => cart.deals.includes(dealId) && cart.user !== userId)
-      .map(cart => cart.user) // Extract the users
+      .filter((cart) => cart.deals.includes(dealId) && cart.user !== userId)
+      .map((cart) => cart.user) // Extract the users
 
     if (interestedUsers.length > 0) {
       // Add to sharedDeals if there are other users interested
       sharedDeals.push({
         deal: dealId,
-        users: interestedUsers
+        users: interestedUsers,
       })
     }
   })
 
-  const mappedSharedDeals = sharedDeals.map(sharedDeal => {
-  // Find the deal object by ID from allDeals
-    const deal = allDeals.find(d => d.id === sharedDeal.deal)
+  const mappedSharedDeals = sharedDeals.map((sharedDeal) => {
+    // Find the deal object by ID from allDeals
+    const deal = allDeals.find((d) => d.id === sharedDeal.deal)
 
     // Map user IDs to actual user objects from authStore.users
     // const users = sharedDeal.users.map(userId => authStore.users.find(u => u.id === userId))
     const users = sharedDeal.users
-      .map(userId => authStore.users.find(u => u.id === userId))
-      .filter(user => {
+      .map((userId) => authStore.users.find((u) => u.id === userId))
+      .filter((user) => {
         const state = buttonState.value(deal.id, user.id)
         return state === 'noRequest'
       })
@@ -150,7 +148,7 @@ const sharedInterestDeals = computed(() => {
     // Return the deal and its associated user objects
     return {
       deal,
-      users
+      users,
     }
   })
 
@@ -184,23 +182,41 @@ const buttonState = computed(() => (dealId, userId) => {
   }
 })
 
-function currentRequest (dealId, recipientId) {
+const noRequestDealCount = computed(() => {
+  let count = 0
+
+  sharedInterestDeals.value.forEach((dealData) => {
+    dealData.users.forEach((user) => {
+      if (buttonState.value(dealData.deal.id, user.id) === 'noRequest') {
+        count++
+      }
+    })
+  })
+
+  return count
+})
+
+function currentRequest(dealId, recipientId) {
   const requesterId = authStore.userId
 
   const currentRequest = buddyStore.buddy_requests.find(
-    (request) => request.deal === dealId &&
-                (
-                  (request.requester === requesterId && request.recipient === recipientId) ||
-                  (request.requester === recipientId && request.recipient === requesterId)
-                )
+    (request) =>
+      request.deal === dealId &&
+      ((request.requester === requesterId && request.recipient === recipientId) ||
+        (request.requester === recipientId && request.recipient === requesterId)),
   )
 
   return currentRequest
 }
 
-async function request (dealId, recipientId) {
+async function request(dealId, recipientId) {
   const requesterId = authStore.userId
-  const buddyRequest = { requester: requesterId, recipient: recipientId, deal: dealId, status: 'Request' }
+  const buddyRequest = {
+    requester: requesterId,
+    recipient: recipientId,
+    deal: dealId,
+    status: 'Request',
+  }
 
   try {
     await buddyStore.buddyRequest(buddyRequest)
@@ -208,19 +224,18 @@ async function request (dealId, recipientId) {
     $q.notify({
       type: 'primary',
       message: 'Buddy Requested',
-      position: 'top'
+      position: 'top',
     })
   } catch (err) {
     if (err.response.data.detail) {
       $q.notify({
         type: 'negative',
         message: err.response.data.detail,
-        position: 'top'
+        position: 'top',
       })
     }
   }
 }
-
 </script>
 
 <style scoped>

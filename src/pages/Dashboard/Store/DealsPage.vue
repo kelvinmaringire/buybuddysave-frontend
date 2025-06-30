@@ -10,7 +10,7 @@
           round
           color="white"
           icon="search"
-          @click="showSearchInput = !showSearchInput, searchAddress = false"
+          @click="((showSearchInput = !showSearchInput), (searchAddress = false))"
         />
       </template>
     </q-banner>
@@ -64,7 +64,7 @@
           no-caps
           push
           glossy
-          @click="searchAddress = true, showSearchInput = false"
+          @click="((searchAddress = true), (showSearchInput = false))"
           class="full-width"
         />
       </div>
@@ -82,11 +82,11 @@
         color="white"
         text-color="primary"
         :options="[
-          {label: 'All', value: 'all'},
-          {label: 'Food', value: 'food', icon: 'restaurant'},
-          {label: 'Drinks', value: 'drinks', icon: 'local_bar'},
-          {label: 'Shopping', value: 'shopping', icon: 'shopping_bag'},
-          {label: 'Services', value: 'services', icon: 'miscellaneous_services'}
+          { label: 'All', value: 'all' },
+          { label: 'Home', value: 'home', icon: 'home_repair_service' },
+          { label: 'Fashion', value: 'fashion', icon: 'checkroom' },
+          { label: 'Tech', value: 'tech', icon: 'devices' },
+          { label: 'Grocery', value: 'grocery', icon: 'local_grocery_store' },
         ]"
       />
     </div>
@@ -105,7 +105,7 @@
             <q-img
               :src="deal.image_url"
               alt="Deal Image"
-              style="width: 100px; height: 100px;"
+              style="width: 100px; height: 100px"
               class="rounded-borders"
               spinner-color="grey-5"
             />
@@ -158,10 +158,10 @@ const formatCategory = (category) => {
 // Get color based on category
 const getCategoryColor = (category) => {
   const colors = {
-    food: 'orange',
-    drinks: 'blue',
-    shopping: 'purple',
-    services: 'teal'
+    home: 'orange',
+    fashion: 'blue',
+    tech: 'purple',
+    grocery: 'teal',
   }
   return colors[category] || 'grey'
 }
@@ -170,15 +170,16 @@ const getCategoryColor = (category) => {
 const filteredDeals = computed(() => {
   let deals = locationDependentDeals.value.deals
   if (selectedCategory.value !== 'all') {
-    deals = deals.filter(deal => deal.category === selectedCategory.value)
+    deals = deals.filter((deal) => deal.category === selectedCategory.value)
   }
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.trim().toLowerCase()
-    deals = deals.filter(deal =>
-      deal.title?.toLowerCase().includes(query) ||
-      deal.description?.toLowerCase().includes(query) ||
-      deal.store_address?.toLowerCase().includes(query) ||
-      deal.store_name?.toLowerCase().includes(query)
+    deals = deals.filter(
+      (deal) =>
+        deal.title?.toLowerCase().includes(query) ||
+        deal.description?.toLowerCase().includes(query) ||
+        deal.store_address?.toLowerCase().includes(query) ||
+        deal.store_name?.toLowerCase().includes(query),
     )
   }
   return deals
@@ -201,11 +202,11 @@ onMounted(async () => {
   // eslint-disable-next-line no-undef
   const autocomplete = new google.maps.places.Autocomplete(inputElement, {
     componentRestrictions: { country: 'za' },
-    fields: ['place_id', 'name', 'formatted_address', 'geometry']
+    fields: ['place_id', 'name', 'formatted_address', 'geometry'],
   })
 
   autocomplete.addListener('place_changed', () => {
-    (async () => {
+    ;(async () => {
       const place = autocomplete.getPlace()
       if (place && place.geometry && place.geometry.location) {
         selectedPlace.value = place
@@ -217,8 +218,8 @@ onMounted(async () => {
           id: authStore.userId,
           location: {
             type: 'Point',
-            coordinates: [lng, lat]
-          }
+            coordinates: [lng, lat],
+          },
         }
 
         try {
@@ -238,7 +239,7 @@ onMounted(async () => {
 const locationDependentDeals = computed(() => {
   return {
     deals: dealStore.geoDeals,
-    timestamp: dealStore.lastLocationUpdate
+    timestamp: dealStore.lastLocationUpdate,
   }
 })
 
@@ -249,7 +250,7 @@ watch(
       dealStore.updateDealsForNewLocation()
     }
   },
-  { deep: true }
+  { deep: true },
 )
 </script>
 
@@ -264,7 +265,9 @@ watch(
   border-radius: 12px;
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 #place:focus,
