@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useBuddyStore } from '../../../stores/buddy-store'
 import { useDealStore } from '../../../stores/deal-store'
 import { useAuthStore } from '../../../stores/auth-store'
@@ -111,6 +111,10 @@ import { useAuthStore } from '../../../stores/auth-store'
 const buddyStore = useBuddyStore()
 const dealStore = useDealStore()
 const authStore = useAuthStore()
+
+onMounted(async () => {
+  await buddyStore.fetchChatMessages()
+})
 
 // Only show deals with an accepted status
 const sharedAcceptedDeals = computed(() => {

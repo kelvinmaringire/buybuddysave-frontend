@@ -2,7 +2,7 @@
   <q-page class="q-pa-md bg-grey-2">
     <!-- Banner -->
     <q-banner dense inline-actions class="text-white bg-primary q-mb-md">
-      <div class="text-h6">Buddy Requests</div>
+      <div class="text-h6">intrested Deals</div>
       <template v-slot:action>
         <q-btn dense round flat icon="favorite" color="white">
           <q-badge color="red" floating rounded>
@@ -17,7 +17,7 @@
       <q-icon name="swap_horiz" size="xl" color="grey-5" />
       <div class="text-h6 text-grey-5 q-mt-md">No buddy requests yet</div>
       <div class="text-caption text-grey q-mt-sm">
-        When you and others save the same deals, requests will appear here
+        When you are intrested in a deal it will appear
       </div>
     </div>
 

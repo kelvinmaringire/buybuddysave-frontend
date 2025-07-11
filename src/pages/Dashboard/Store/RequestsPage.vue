@@ -6,7 +6,7 @@
       <template v-slot:action>
         <q-btn dense round flat icon="swap_horiz" color="white">
           <q-badge color="red" floating rounded>
-            {{ sharedInterestDeals.length }}
+            {{ totalPendingRequests }}
           </q-badge>
         </q-btn>
       </template>
@@ -228,6 +228,21 @@ const buttonState = computed(() => (dealId, userId) => {
   if (request.status === 'Declined') {
     return 'declined'
   }
+})
+
+const totalPendingRequests = computed(() => {
+  let count = 0
+
+  sharedInterestDeals.value.forEach((dealData) => {
+    dealData.users.forEach((user) => {
+      const state = buttonState.value(dealData.deal.id, user.id)
+      if (state === 'pendingRequester' || state === 'pendingRecipient') {
+        count++
+      }
+    })
+  })
+
+  return count
 })
 
 function currentRequest(dealId, recipientId) {
