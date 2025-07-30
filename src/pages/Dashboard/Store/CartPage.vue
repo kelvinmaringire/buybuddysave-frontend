@@ -2,7 +2,7 @@
   <q-page class="q-pa-md bg-grey-2">
     <!-- Banner -->
     <q-banner dense inline-actions class="text-white bg-primary q-mb-md">
-      <div class="text-h6">intrested Deals</div>
+      <div class="text-h6">Interested Deals</div>
       <template v-slot:action>
         <q-btn dense round flat icon="favorite" color="white">
           <q-badge color="red" floating rounded>
@@ -17,7 +17,7 @@
       <q-icon name="swap_horiz" size="xl" color="grey-5" />
       <div class="text-h6 text-grey-5 q-mt-md">No buddy requests yet</div>
       <div class="text-caption text-grey q-mt-sm">
-        When you are intrested in a deal it will appear
+        When you are interested in a deal it will appear here
       </div>
     </div>
 
@@ -36,7 +36,6 @@
             style="width: 100px; height: 100px"
             class="rounded-borders"
           />
-
           <q-card-section class="q-pt-xs">
             <div class="text-subtitle1 text-weight-bold">{{ dealData.deal.title }}</div>
             <div class="text-caption text-grey-7 text-ellipsis-2-lines">
@@ -62,9 +61,7 @@
               </q-avatar>
               <div class="text-subtitle2 text-teal-10">@{{ user.username }}</div>
             </div>
-
             <div>
-              <!-- No Request State -->
               <q-btn
                 v-if="buttonState(dealData.deal.id, user.id) === 'noRequest'"
                 unelevated
@@ -104,111 +101,77 @@ const dealStore = useDealStore()
 const authStore = useAuthStore()
 const $q = useQuasar()
 
-const sharedInterestDeals = computed(() => {
-  const userId = authStore.userId
-  const allDeals = dealStore.geoDeals
-  const shoppingList = dealStore.shopping_list // List of all users' deals
-
-  // Find the user's shopping cart
-  const shoppingCart = shoppingList.find((cart) => cart.user === userId)
-  if (!shoppingCart || !shoppingCart.deals) return [] // Return empty if no shopping cart found
-
-  const userDeals = shoppingCart.deals // Deals for the current user
-  const sharedDeals = [] // Will store shared interest deals
-
-  // Loop through user's deals
-  userDeals.forEach((dealId) => {
-    // Find other users who are also interested in the same deal
-    const interestedUsers = shoppingList
-      .filter((cart) => cart.deals.includes(dealId) && cart.user !== userId)
-      .map((cart) => cart.user) // Extract the users
-
-    if (interestedUsers.length > 0) {
-      // Add to sharedDeals if there are other users interested
-      sharedDeals.push({
-        deal: dealId,
-        users: interestedUsers,
-      })
-    }
-  })
-
-  const mappedSharedDeals = sharedDeals.map((sharedDeal) => {
-    // Find the deal object by ID from allDeals
-    const deal = allDeals.find((d) => d.id === sharedDeal.deal)
-
-    // Map user IDs to actual user objects from authStore.users
-    // const users = sharedDeal.users.map(userId => authStore.users.find(u => u.id === userId))
-    const users = sharedDeal.users
-      .map((userId) => authStore.users.find((u) => u.id === userId))
-      .filter((user) => {
-        const state = buttonState.value(deal.id, user.id)
-        return state === 'noRequest'
-      })
-
-    // Return the deal and its associated user objects
-    return {
-      deal,
-      users,
-    }
-  })
-
-  return mappedSharedDeals
-})
-
+// State of the buddy request button
 const buttonState = computed(() => (dealId, userId) => {
   const request = currentRequest(dealId, userId)
-
-  if (!request) {
-    return 'noRequest'
-  }
+  if (!request) return 'noRequest'
 
   const isRequester = request.requester === authStore.userId
   const isRecipient = request.recipient === authStore.userId
 
-  if (request.status === 'Request' && isRequester) {
-    return 'pendingRequester'
-  }
-
-  if (request.status === 'Request' && isRecipient) {
-    return 'pendingRecipient'
-  }
-
-  if (request.status === 'Accepted') {
-    return 'accepted'
-  }
-
-  if (request.status === 'Declined') {
-    return 'declined'
-  }
+  if (request.status === 'Request' && isRequester) return 'pendingRequester'
+  if (request.status === 'Request' && isRecipient) return 'pendingRecipient'
+  if (request.status === 'Accepted') return 'accepted'
+  if (request.status === 'Declined') return 'declined'
 })
 
-const noRequestDealCount = computed(() => {
-  let count = 0
+// Computed list of shared deals filtered by "noRequest" users
+const sharedInterestDeals = computed(() => {
+  const userId = authStore.userId
+  const allDeals = dealStore.geoDeals
+  const shoppingList = dealStore.shopping_list
 
-  sharedInterestDeals.value.forEach((dealData) => {
-    dealData.users.forEach((user) => {
-      if (buttonState.value(dealData.deal.id, user.id) === 'noRequest') {
-        count++
-      }
-    })
+  const shoppingCart = shoppingList.find((cart) => cart.user === userId)
+  if (!shoppingCart || !shoppingCart.deals) return []
+
+  const userDeals = shoppingCart.deals
+  const sharedDeals = []
+
+  userDeals.forEach((dealId) => {
+    const interestedUsers = shoppingList
+      .filter((cart) => cart.deals.includes(dealId) && cart.user !== userId)
+      .map((cart) => cart.user)
+
+    if (interestedUsers.length > 0) {
+      sharedDeals.push({ deal: dealId, users: interestedUsers })
+    }
   })
 
-  return count
+  return sharedDeals
+    .map((sharedDeal) => {
+      const deal = allDeals.find((d) => d.id === sharedDeal.deal)
+      const users = sharedDeal.users
+        .map((uid) => authStore.users.find((u) => u.id === uid))
+        .filter((user) => buttonState.value(deal.id, user.id) === 'noRequest')
+
+      return { deal, users }
+    })
+    .filter((dealData) => dealData.users.length > 0) // ✅ Remove deals with no "noRequest" users
 })
 
+// Count of users with no request
+const noRequestDealCount = computed(() => {
+  return sharedInterestDeals.value.reduce((count, dealData) => {
+    return (
+      count +
+      dealData.users.filter((user) => buttonState.value(dealData.deal.id, user.id) === 'noRequest')
+        .length
+    )
+  }, 0)
+})
+
+// Find current buddy request
 function currentRequest(dealId, recipientId) {
   const requesterId = authStore.userId
-
-  const currentRequest = buddyStore.buddy_requests.find(
+  return buddyStore.buddy_requests.find(
     (request) =>
       request.deal === dealId &&
       ((request.requester === requesterId && request.recipient === recipientId) ||
         (request.requester === recipientId && request.recipient === requesterId)),
   )
-
-  return currentRequest
 }
 
+// Send a buddy request
 async function request(dealId, recipientId) {
   const requesterId = authStore.userId
   const buddyRequest = {
@@ -220,19 +183,10 @@ async function request(dealId, recipientId) {
 
   try {
     await buddyStore.buddyRequest(buddyRequest)
-
-    $q.notify({
-      type: 'primary',
-      message: 'Buddy Requested',
-      position: 'top',
-    })
+    $q.notify({ type: 'primary', message: 'Buddy Requested', position: 'top' })
   } catch (err) {
-    if (err.response.data.detail) {
-      $q.notify({
-        type: 'negative',
-        message: err.response.data.detail,
-        position: 'top',
-      })
+    if (err.response?.data?.detail) {
+      $q.notify({ type: 'negative', message: err.response.data.detail, position: 'top' })
     }
   }
 }
@@ -247,56 +201,42 @@ async function request(dealId, recipientId) {
   text-overflow: ellipsis;
 }
 
-/* Responsive adjustments */
 @media (max-width: 600px) {
   .text-subtitle1 {
     font-size: 1rem;
   }
-
   .text-subtitle2 {
     font-size: 0.875rem;
   }
-
   .q-btn {
     font-size: 0.75rem;
     padding: 4px 8px;
   }
 }
 
-/* Animation for buttons */
 .q-btn {
   transition: all 0.2s ease;
 }
-
 .q-btn:active {
   transform: scale(0.96);
 }
 
-/* Card styling */
 .q-card {
   border-radius: 12px;
   overflow: hidden;
 }
-
-/* User request section */
 .user-request-section {
   background-color: #fafafa;
   margin: 0 -16px;
   padding: 8px 16px;
 }
-
-/* Avatar styling */
 .q-avatar {
   font-weight: 500;
 }
-
-/* Chip styling */
 .q-chip {
   padding: 4px 8px;
   font-size: 0.75rem;
 }
-
-/* View deal button section */
 .q-card-actions {
   border-top: 1px solid #e0e0e0;
   padding: 12px;

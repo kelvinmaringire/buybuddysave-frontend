@@ -155,52 +155,37 @@ const $q = useQuasar()
 const sharedInterestDeals = computed(() => {
   const userId = authStore.userId
   const allDeals = dealStore.deals
-  const shoppingList = dealStore.shopping_list // List of all users' deals
+  const shoppingList = dealStore.shopping_list
 
-  // Find the user's shopping cart
   const shoppingCart = shoppingList.find((cart) => cart.user === userId)
-  if (!shoppingCart || !shoppingCart.deals) return [] // Return empty if no shopping cart found
+  if (!shoppingCart || !shoppingCart.deals) return []
 
-  const userDeals = shoppingCart.deals // Deals for the current user
-  const sharedDeals = [] // Will store shared interest deals
+  const userDeals = shoppingCart.deals
+  const sharedDeals = []
 
-  // Loop through user's deals
   userDeals.forEach((dealId) => {
-    // Find other users who are also interested in the same deal
     const interestedUsers = shoppingList
       .filter((cart) => cart.deals.includes(dealId) && cart.user !== userId)
-      .map((cart) => cart.user) // Extract the users
+      .map((cart) => cart.user)
 
     if (interestedUsers.length > 0) {
-      // Add to sharedDeals if there are other users interested
-      sharedDeals.push({
-        deal: dealId,
-        users: interestedUsers,
-      })
+      sharedDeals.push({ deal: dealId, users: interestedUsers })
     }
   })
 
-  const mappedSharedDeals = sharedDeals.map((sharedDeal) => {
-    // Find the deal object by ID from allDeals
-    const deal = allDeals.find((d) => d.id === sharedDeal.deal)
+  return sharedDeals
+    .map((sharedDeal) => {
+      const deal = allDeals.find((d) => d.id === sharedDeal.deal)
+      const users = sharedDeal.users
+        .map((uid) => authStore.users.find((u) => u.id === uid))
+        .filter((user) => {
+          const state = buttonState.value(deal.id, user.id)
+          return state === 'pendingRequester' || state === 'pendingRecipient'
+        })
 
-    // Map user IDs to actual user objects from authStore.users
-    // const users = sharedDeal.users.map(userId => authStore.users.find(u => u.id === userId))
-    const users = sharedDeal.users
-      .map((userId) => authStore.users.find((u) => u.id === userId))
-      .filter((user) => {
-        const state = buttonState.value(deal.id, user.id)
-        return state !== 'noRequest'
-      })
-
-    // Return the deal and its associated user objects
-    return {
-      deal,
-      users,
-    }
-  })
-
-  return mappedSharedDeals
+      return { deal, users }
+    })
+    .filter((dealData) => dealData.users.length > 0) // ✅ remove deals with no pending users
 })
 
 const buttonState = computed(() => (dealId, userId) => {
