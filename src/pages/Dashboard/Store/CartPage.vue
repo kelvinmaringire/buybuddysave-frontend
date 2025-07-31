@@ -137,16 +137,14 @@ const sharedInterestDeals = computed(() => {
     }
   })
 
-  return sharedDeals
-    .map((sharedDeal) => {
-      const deal = allDeals.find((d) => d.id === sharedDeal.deal)
-      const users = sharedDeal.users
-        .map((uid) => authStore.users.find((u) => u.id === uid))
-        .filter((user) => buttonState.value(deal.id, user.id) === 'noRequest')
+  return sharedDeals.map((sharedDeal) => {
+    const deal = allDeals.find((d) => d.id === sharedDeal.deal)
+    const users = sharedDeal.users
+      .map((uid) => authStore.users.find((u) => u.id === uid))
+      .filter((user) => buttonState.value(deal.id, user.id) === 'noRequest')
 
-      return { deal, users }
-    })
-    .filter((dealData) => dealData.users.length > 0) // ✅ Remove deals with no "noRequest" users
+    return { deal, users }
+  })
 })
 
 // Count of users with no request
