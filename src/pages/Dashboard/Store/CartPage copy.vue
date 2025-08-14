@@ -6,7 +6,7 @@
       <template v-slot:action>
         <q-btn dense round flat icon="favorite" color="white">
           <q-badge color="red" floating rounded>
-            {{ totalDealsInCart }}
+            {{ noRequestDealCount }}
           </q-badge>
         </q-btn>
       </template>
@@ -36,13 +36,8 @@
             style="width: 100px; height: 100px"
             class="rounded-borders"
           />
-          <q-card-section class="q-pt-xs" style="width: 100%">
-            <div class="row items-center justify-between">
-              <div class="text-subtitle1 text-weight-bold">{{ dealData.deal.title }}</div>
-              <q-badge color="red" rounded v-if="dealNoRequestCount(dealData) > 0">
-                {{ dealNoRequestCount(dealData) }}
-              </q-badge>
-            </div>
+          <q-card-section class="q-pt-xs">
+            <div class="text-subtitle1 text-weight-bold">{{ dealData.deal.title }}</div>
             <div class="text-caption text-grey-7 text-ellipsis-2-lines">
               {{ dealData.deal.description }}
             </div>
@@ -137,33 +132,30 @@ const sharedInterestDeals = computed(() => {
       .filter((cart) => cart.deals.includes(dealId) && cart.user !== userId)
       .map((cart) => cart.user)
 
-    // Always include deal, even if no interested users
-    sharedDeals.push({ deal: dealId, users: interestedUsers })
+    if (interestedUsers.length > 0) {
+      sharedDeals.push({ deal: dealId, users: interestedUsers })
+    }
   })
 
   return sharedDeals.map((sharedDeal) => {
     const deal = allDeals.find((d) => d.id === sharedDeal.deal)
     const users = sharedDeal.users
       .map((uid) => authStore.users.find((u) => u.id === uid))
-      .filter((user) => user && buttonState.value(deal.id, user.id) === 'noRequest')
+      .filter((user) => buttonState.value(deal.id, user.id) === 'noRequest')
 
     return { deal, users }
   })
 })
 
-// Count of users with no request (per deal)
-function dealNoRequestCount(dealData) {
-  return dealData.users.filter(
-    (user) => buttonState.value(dealData.deal.id, user.id) === 'noRequest',
-  ).length
-}
-
-// Total deals in the cart
-const totalDealsInCart = computed(() => {
-  const userId = authStore.userId
-  const shoppingList = dealStore.shopping_list
-  const shoppingCart = shoppingList.find((cart) => cart.user === userId)
-  return shoppingCart?.deals?.length || 0
+// Count of users with no request
+const noRequestDealCount = computed(() => {
+  return sharedInterestDeals.value.reduce((count, dealData) => {
+    return (
+      count +
+      dealData.users.filter((user) => buttonState.value(dealData.deal.id, user.id) === 'noRequest')
+        .length
+    )
+  }, 0)
 })
 
 // Find current buddy request

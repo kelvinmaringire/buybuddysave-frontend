@@ -24,13 +24,13 @@
               <div class="relative-position">
                 <q-icon name="favorite" size="24px" />
                 <q-badge
-                  v-if="noRequestDealCount > 0"
+                  v-if="totalDealsInCart > 0"
                   color="red"
                   rounded
                   floating
                   class="badge-float"
                 >
-                  {{ noRequestDealCount }}
+                  {{ totalDealsInCart }}
                 </q-badge>
               </div>
               <span class="text-caption">Wish</span>
@@ -179,18 +179,12 @@ const sharedInterestDeals = computed(() => {
 })
 
 /**
- * Wishlist count: Deals with mutual interest but no request sent yet
+ * Total deals in cart (for Wishlist tab badge)
  */
-const noRequestDealCount = computed(() => {
-  let count = 0
-  sharedInterestDeals.value.forEach((dealData) => {
-    dealData.users.forEach((user) => {
-      if (buttonState.value(dealData.deal.id, user.id) === 'noRequest') {
-        count++
-      }
-    })
-  })
-  return count
+const totalDealsInCart = computed(() => {
+  const userId = authStore.userId
+  const myCart = dealStore.shopping_list.find((cart) => cart.user === userId)
+  return myCart?.deals?.length || 0
 })
 
 /**
